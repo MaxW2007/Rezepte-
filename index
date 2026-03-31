@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1a1a2e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="KochListe" />
+  <title>KochListe</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0f0f1a;
+      --surface: #1a1a2e;
+      --surface2: #16213e;
+      --accent: #e8b86d;
+      --accent2: #f4d58d;
+      --green: #4ecdc4;
+      --red: #ff6b6b;
+      --text: #f0ece2;
+      --text-muted: #8a8597;
+      --border: rgba(232,184,109,0.15);
+      --radius: 16px;
+    }
+
+```
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── NOISE TEXTURE ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0; opacity: 0.4;
+}
+
+/* ── HEADER ── */
+header {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,26,0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+}
+
+.header-inner {
+  max-width: 600px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 60px;
+}
+
+.logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem; font-weight: 900;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+}
+
+.logo span { color: var(--text); }
+
+/* ── NAV TABS ── */
+.tabs {
+  display: flex; gap: 4px;
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 4px;
+  border: 1px solid var(--border);
+}
+
+.tab {
+  padding: 7px 14px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.tab.active {
+  background: var(--accent);
+  color: #0f0f1a;
+}
+
+/* ── MAIN CONTENT ── */
+main {
+  max-width: 600px; margin: 0 auto;
+  padding: 24px 20px 100px;
+  position: relative; z-index: 1;
+}
+
+.page { display: none; }
+.page.active { display: block; animation: fadeUp 0.3s ease; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── SECTION TITLE ── */
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem; font-weight: 700;
+  margin-bottom: 20px;
+  color: var(--text);
+}
+
+.section-title span { color: var(--accent); }
+
+/* ── CARDS ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 12px;
+  transition: border-color 0.2s;
+}
+
+.card:hover { border-color: rgba(232,184,109,0.35); }
+
+/* ── RECIPE CARD ── */
+.recipe-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.recipe-name {
+  font-weight: 500;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.recipe-portions-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.recipe-ingredients {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.recipe-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+/* ── COUNTER ── */
+.counter {
+  display: flex; align-items: center; gap: 8px;
+}
+
+.counter-btn {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.counter-btn:active { transform: scale(0.9); }
+.counter-btn.plus { border-color: var(--accent); color: var(--accent); }
+.counter-btn.minus { border-color: rgba(255,107,107,0.4); color: var(--red); }
+
+.counter-val {
+  font-size: 1.1rem; font-weight: 500;
+  min-width: 24px; text-align: center;
+  color: var(--accent);
+}
+
+.delete-btn {
+  background: none; border: none;
+  color: var(--text-muted); cursor: pointer;
+  font-size: 0.75rem; padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.2s, background 0.2s;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.delete-btn:hover { color: var(--red); background: rgba(255,107,107,0.1); }
+
+/* ── FORM ── */
+.form-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.form-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem; font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--accent);
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+label {
+  display: block;
+  font-size: 0.78rem; font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+
+input, textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem;
+  padding: 11px 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input:focus, textarea:focus { border-color: var(--accent); }
+textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
+
+.ingredient-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.5fr auto;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.ingredient-row input { margin: 0; }
+
+.remove-ing-btn {
+  width: 32px; height: 38px;
+  background: none;
+  border: 1px solid rgba(255,107,107,0.3);
+  border-radius: 8px;
+  color: var(--red);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.remove-ing-btn:hover { background: rgba(255,107,107,0.1); }
+
+.add-ing-btn {
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  padding: 8px 14px;
+  cursor: pointer;
+  width: 100%;
+  transition: border-color 0.2s, color 0.2s;
+  margin-top: 4px;
+}
+
+.add-ing-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.btn {
+  background: var(--accent);
+  color: #0f0f1a;
+  border: none;
+  border-radius: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem; font-weight: 500;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+  width: 100%;
+}
+
+.btn:active { transform: scale(0.98); opacity: 0.9; }
+
+.btn-outline {
+  background: none;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+
+.ing-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.5fr auto;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.ing-header span {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding-left: 14px;
+}
+
+/* ── SHOPPING LIST ── */
+.generate-bar {
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-bottom: 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+}
+
+.generate-info { flex: 1; }
+.generate-info strong { display: block; font-size: 0.95rem; margin-bottom: 2px; }
+.generate-info span { font-size: 0.8rem; color: var(--text-muted); }
+
+.generate-btn {
+  background: var(--accent);
+  color: #0f0f1a;
+  border: none;
+  border-radius: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem; font-weight: 500;
+  padding: 10px 18px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.15s;
+}
+
+.generate-btn:active { transform: scale(0.96); }
+
+.shopping-category {
+  margin-bottom: 20px;
+}
+
+.category-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  font-weight: 500;
+  margin-bottom: 10px;
+  padding-left: 4px;
+}
+
+.shopping-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.shopping-item.checked {
+  opacity: 0.45;
+  border-color: transparent;
+}
+
+.shopping-item.checked .item-name {
+  text-decoration: line-through;
+}
+
+.check-box {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  font-size: 0.8rem;
+}
+
+.shopping-item.checked .check-box {
+  background: var(--green);
+  border-color: var(--green);
+}
+
+.item-name { flex: 1; font-size: 0.95rem; }
+
+.item-amount {
+  font-size: 0.82rem;
+  color: var(--accent);
+  font-weight: 500;
+  background: rgba(232,184,109,0.1);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--text-muted);
+}
+
+.empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+.empty-state p { font-size: 0.9rem; line-height: 1.6; }
+
+.clear-btn {
+  background: none;
+  border: 1px solid rgba(255,107,107,0.3);
+  color: var(--red);
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.clear-btn:hover { background: rgba(255,107,107,0.1); }
+
+.list-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+/* ── SELECTED BADGE ── */
+.selected-badge {
+  display: inline-block;
+  background: rgba(78,205,196,0.15);
+  border: 1px solid rgba(78,205,196,0.3);
+  color: var(--green);
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 0.85rem;
+  opacity: 0;
+  transition: all 0.3s;
+  z-index: 200;
+  white-space: nowrap;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: rgba(15,15,26,0.95);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  padding: 8px 0 env(safe-area-inset-bottom);
+  z-index: 100;
+}
+
+.nav-btn {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  background: none; border: none;
+  color: var(--text-muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.7rem;
+  cursor: pointer;
+  padding: 8px 4px;
+  transition: color 0.2s;
+}
+
+.nav-btn .icon { font-size: 1.4rem; }
+.nav-btn.active { color: var(--accent); }
+
+/* ── INSTALL BANNER ── */
+#install-banner {
+  display: none;
+  position: fixed; top: 64px; left: 16px; right: 16px;
+  background: var(--surface2);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  z-index: 150;
+  gap: 12px;
+  align-items: center;
+}
+
+#install-banner.visible { display: flex; }
+#install-banner p { flex: 1; font-size: 0.85rem; }
+#install-banner strong { color: var(--accent); }
+
+.install-btn {
+  background: var(--accent);
+  color: #0f0f1a;
+  border: none;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem; font-weight: 500;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.dismiss-btn {
+  background: none; border: none;
+  color: var(--text-muted); font-size: 1.2rem;
+  cursor: pointer; padding: 4px;
+}
+
+.portions-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+}
+.portions-row label { margin: 0; white-space: nowrap; }
+
+.portions-input {
+  width: 70px !important;
+}
+```
+
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">Koch<span>Liste</span></div>
+    <div class="tabs">
+      <button class="tab active" onclick="showPage('rezepte')">Rezepte</button>
+      <button class="tab" onclick="showPage('planen')">Planen</button>
+      <button class="tab" onclick="showPage('liste')">Einkauf</button>
+    </div>
+  </div>
+</header>
+
+<div id="install-banner">
+  <p>📲 <strong>App installieren</strong> – füge sie zum Startbildschirm hinzu!</p>
+  <button class="install-btn" id="install-btn">Installieren</button>
+  <button class="dismiss-btn" onclick="dismissInstall()">✕</button>
+</div>
+
+<main>
+  <!-- ── REZEPTE PAGE ── -->
+  <div class="page active" id="page-rezepte">
+    <h2 class="section-title">Meine <span>Rezepte</span></h2>
+
+```
+<div class="form-card" id="new-recipe-form">
+  <div class="form-title">✦ Neues Rezept</div>
+  <div class="form-group">
+    <label>Rezeptname</label>
+    <input type="text" id="recipe-name" placeholder="z.B. Spaghetti Bolognese" />
+  </div>
+  <div class="form-group">
+    <label>Portionen (Standardmenge)</label>
+    <div class="portions-row">
+      <input type="number" id="recipe-portions" class="portions-input" value="4" min="1" />
+      <span style="font-size:0.85rem; color:var(--text-muted)">Portionen</span>
+    </div>
+  </div>
+  <div class="form-group">
+    <label>Zutaten</label>
+    <div class="ing-header">
+      <span>Zutat</span><span>Menge</span><span>Einheit</span><span></span>
+    </div>
+    <div id="ingredients-list"></div>
+    <button class="add-ing-btn" onclick="addIngredientRow()">+ Zutat hinzufügen</button>
+  </div>
+  <button class="btn" onclick="saveRecipe()">Rezept speichern</button>
+</div>
+
+<div id="recipes-container">
+  <p style="color:var(--text-muted); font-size:0.9rem; text-align:center; padding:20px">
+    Noch keine Rezepte. Erstelle dein erstes Rezept oben!
+  </p>
+</div>
+```
+
+  </div>
+
+  <!-- ── PLANEN PAGE ── -->
+
+  <div class="page" id="page-planen">
+    <h2 class="section-title">Woche <span>planen</span></h2>
+    <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:20px">
+      Wie oft möchtest du diese Rezepte kochen?
+    </p>
+    <div id="plan-container">
+      <div class="empty-state">
+        <div class="icon">🍽️</div>
+        <p>Erst Rezepte anlegen,<br>dann hier planen!</p>
+      </div>
+    </div>
+    <div style="margin-top:20px">
+      <button class="btn" onclick="generateList()">🛒 Einkaufsliste erstellen</button>
+    </div>
+  </div>
+
+  <!-- ── LISTE PAGE ── -->
+
+  <div class="page" id="page-liste">
+    <div class="list-header">
+      <h2 class="section-title" style="margin:0">Einkaufs<span style="color:var(--accent)">liste</span></h2>
+      <button class="clear-btn" onclick="clearChecked()">✓ Erledigt löschen</button>
+    </div>
+    <div id="list-container">
+      <div class="empty-state">
+        <div class="icon">🛒</div>
+        <p>Gehe zu <strong>Planen</strong>,<br>wähle Rezepte aus und<br>generiere die Liste!</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="showPage('rezepte')" id="nav-rezepte">
+    <span class="icon">📖</span>Rezepte
+  </button>
+  <button class="nav-btn" onclick="showPage('planen')" id="nav-planen">
+    <span class="icon">📅</span>Planen
+  </button>
+  <button class="nav-btn" onclick="showPage('liste')" id="nav-liste">
+    <span class="icon">🛒</span>Einkauf
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──
+let recipes = JSON.parse(localStorage.getItem('kochliste_recipes') || '[]');
+let plan    = JSON.parse(localStorage.getItem('kochliste_plan')    || '{}');
+let shoppingList = JSON.parse(localStorage.getItem('kochliste_list') || '[]');
+
+function save() {
+  localStorage.setItem('kochliste_recipes', JSON.stringify(recipes));
+  localStorage.setItem('kochliste_plan',    JSON.stringify(plan));
+  localStorage.setItem('kochliste_list',    JSON.stringify(shoppingList));
+}
+
+// ── NAVIGATION ──
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t => {
+    if (t.textContent.toLowerCase().includes(name === 'rezepte' ? 'rezept' : name === 'planen' ? 'plan' : 'einkauf'))
+      t.classList.add('active');
+  });
+  document.getElementById('nav-' + name).classList.add('active');
+
+  if (name === 'planen') renderPlan();
+  if (name === 'liste')  renderList();
+}
+
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── INGREDIENT ROWS ──
+function addIngredientRow(name='', amount='', unit='') {
+  const container = document.getElementById('ingredients-list');
+  const row = document.createElement('div');
+  row.className = 'ingredient-row';
+  row.innerHTML = `
+    <input type="text" placeholder="Tomaten" value="${name}" />
+    <input type="number" placeholder="400" value="${amount}" min="0" step="0.1" />
+    <input type="text" placeholder="g / ml / Stk" value="${unit}" />
+    <button class="remove-ing-btn" onclick="this.parentElement.remove()">✕</button>
+  `;
+  container.appendChild(row);
+}
+
+// ── SAVE RECIPE ──
+function saveRecipe() {
+  const name = document.getElementById('recipe-name').value.trim();
+  const portions = parseInt(document.getElementById('recipe-portions').value) || 4;
+  if (!name) { showToast('⚠️ Bitte Rezeptname eingeben'); return; }
+
+  const rows = document.querySelectorAll('#ingredients-list .ingredient-row');
+  const ingredients = [];
+  rows.forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const ingName = inputs[0].value.trim();
+    const amount  = inputs[1].value.trim();
+    const unit    = inputs[2].value.trim();
+    if (ingName) ingredients.push({ name: ingName, amount: parseFloat(amount) || 0, unit });
+  });
+
+  if (!ingredients.length) { showToast('⚠️ Mindestens eine Zutat angeben'); return; }
+
+  const recipe = { id: Date.now(), name, portions, ingredients };
+  recipes.push(recipe);
+  plan[recipe.id] = 0;
+  save();
+
+  // reset form
+  document.getElementById('recipe-name').value = '';
+  document.getElementById('recipe-portions').value = '4';
+  document.getElementById('ingredients-list').innerHTML = '';
+
+  renderRecipes();
+  showToast('✅ Rezept gespeichert!');
+}
+
+// ── RENDER RECIPES ──
+function renderRecipes() {
+  const c = document.getElementById('recipes-container');
+  if (!recipes.length) {
+    c.innerHTML = '<p style="color:var(--text-muted); font-size:0.9rem; text-align:center; padding:20px">Noch keine Rezepte. Erstelle dein erstes Rezept oben!</p>';
+    return;
+  }
+  c.innerHTML = recipes.map(r => `
+    <div class="card recipe-card">
+      <div>
+        <div class="recipe-name">${r.name}</div>
+        <div class="recipe-portions-label">Für ${r.portions} Portionen</div>
+        <div class="recipe-ingredients">${r.ingredients.map(i =>
+          `${i.amount ? i.amount + ' ' : ''}${i.unit ? i.unit + ' ' : ''}${i.name}`
+        ).join(' · ')}</div>
+      </div>
+      <div class="recipe-actions">
+        <button class="delete-btn" onclick="deleteRecipe(${r.id})">🗑 löschen</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function deleteRecipe(id) {
+  recipes = recipes.filter(r => r.id !== id);
+  delete plan[id];
+  save();
+  renderRecipes();
+  showToast('Rezept gelöscht');
+}
+
+// ── RENDER PLAN ──
+function renderPlan() {
+  const c = document.getElementById('plan-container');
+  if (!recipes.length) {
+    c.innerHTML = '<div class="empty-state"><div class="icon">🍽️</div><p>Erst Rezepte anlegen,<br>dann hier planen!</p></div>';
+    return;
+  }
+  c.innerHTML = recipes.map(r => {
+    const count = plan[r.id] || 0;
+    return `
+      <div class="card recipe-card">
+        <div>
+          <div class="recipe-name">${r.name}</div>
+          <div class="recipe-portions-label">
+            ${r.portions} Portionen Grundrezept
+            ${count > 0 ? `· <span class="selected-badge">×${count} ausgewählt</span>` : ''}
+          </div>
+          <div class="recipe-ingredients">${r.ingredients.length} Zutaten</div>
+        </div>
+        <div class="recipe-actions">
+          <div class="counter">
+            <button class="counter-btn minus" onclick="updatePlan(${r.id}, -1)">−</button>
+            <span class="counter-val" id="plan-count-${r.id}">${count}</span>
+            <button class="counter-btn plus" onclick="updatePlan(${r.id}, 1)">+</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function updatePlan(id, delta) {
+  plan[id] = Math.max(0, (plan[id] || 0) + delta);
+  save();
+  const el = document.getElementById('plan-count-' + id);
+  if (el) el.textContent = plan[id];
+  // update badge
+  renderPlan();
+}
+
+// ── GENERATE LIST ──
+function generateList() {
+  const totals = {}; // key: "name|unit" → { name, unit, amount }
+
+  recipes.forEach(r => {
+    const times = plan[r.id] || 0;
+    if (!times) return;
+    // scale factor: times * (1 portion = 1/r.portions of recipe)
+    const factor = times;
+    r.ingredients.forEach(ing => {
+      const key = ing.name.toLowerCase() + '|' + ing.unit.toLowerCase();
+      if (!totals[key]) totals[key] = { name: ing.name, unit: ing.unit, amount: 0 };
+      totals[key].amount += ing.amount * factor;
+    });
+  });
+
+  shoppingList = Object.values(totals).map(item => ({
+    ...item,
+    checked: false,
+    id: Math.random().toString(36).slice(2)
+  }));
+
+  if (!shoppingList.length) {
+    showToast('⚠️ Kein Rezept ausgewählt!');
+    return;
+  }
+
+  save();
+  showPage('liste');
+  showToast('✅ Einkaufsliste erstellt!');
+}
+
+// ── RENDER LIST ──
+function renderList() {
+  const c = document.getElementById('list-container');
+  if (!shoppingList.length) {
+    c.innerHTML = `<div class="empty-state"><div class="icon">🛒</div><p>Gehe zu <strong>Planen</strong>,<br>wähle Rezepte aus und<br>generiere die Liste!</p></div>`;
+    return;
+  }
+
+  // group by unit type (rough categorization)
+  const cats = {};
+  shoppingList.forEach(item => {
+    const cat = getCategory(item.name, item.unit);
+    if (!cats[cat]) cats[cat] = [];
+    cats[cat].push(item);
+  });
+
+  c.innerHTML = Object.entries(cats).map(([cat, items]) => `
+    <div class="shopping-category">
+      <div class="category-title">${cat}</div>
+      ${items.map(item => `
+        <div class="shopping-item ${item.checked ? 'checked' : ''}" onclick="toggleItem('${item.id}')">
+          <div class="check-box">${item.checked ? '✓' : ''}</div>
+          <span class="item-name">${item.name}</span>
+          ${item.amount ? `<span class="item-amount">${formatAmount(item.amount)} ${item.unit}</span>` : ''}
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+function getCategory(name, unit) {
+  const n = name.toLowerCase();
+  const u = unit.toLowerCase();
+  if (['g','kg','ml','l'].includes(u)) {
+    if (/mehl|zucker|salz|pfeffer|öl|essig|butter|sahne|milch/.test(n)) return '🧂 Grundzutaten';
+    if (/fleisch|hähnchen|rind|schwein|fisch|lachs|thunfisch/.test(n)) return '🥩 Fleisch & Fisch';
+    if (/käse|joghurt|ei|eier/.test(n)) return '🥚 Kühlregal';
+  }
+  if (/tomate|paprika|zwiebel|knoblauch|karotte|salat|gurke|brokkoli|spinat/.test(n)) return '🥦 Gemüse';
+  if (/apfel|banane|zitrone|orange|beere/.test(n)) return '🍎 Obst';
+  if (/nudel|pasta|reis|brot|mehl/.test(n)) return '🌾 Getreide & Brot';
+  if (/dose|konserv/.test(n)) return '🥫 Konserven';
+  return '🛒 Sonstiges';
+}
+
+function formatAmount(val) {
+  if (val === Math.floor(val)) return val;
+  return Math.round(val * 10) / 10;
+}
+
+function toggleItem(id) {
+  const item = shoppingList.find(i => i.id === id);
+  if (item) { item.checked = !item.checked; save(); renderList(); }
+}
+
+function clearChecked() {
+  shoppingList = shoppingList.filter(i => !i.checked);
+  save();
+  renderList();
+  showToast('Erledigte Einträge gelöscht');
+}
+
+// ── PWA INSTALL ──
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-banner').classList.add('visible');
+});
+
+document.getElementById('install-btn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  if (outcome === 'accepted') showToast('🎉 App installiert!');
+  deferredPrompt = null;
+  dismissInstall();
+});
+
+function dismissInstall() {
+  document.getElementById('install-banner').classList.remove('visible');
+}
+
+// ── INIT ──
+addIngredientRow();
+renderRecipes();
+</script>
+
+<!-- SERVICE WORKER REGISTRATION -->
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .catch(err => console.log('SW nicht verfügbar:', err));
+  });
+}
+</script>
+
+</body>
+</html>
